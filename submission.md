@@ -107,3 +107,5 @@ Issues #5, #1, and #4 are fixed below.
 - How I found the root cause: I traced `POST /songs/<song_id>/rate` in `routes/songs.py` to `notification_service.rate_song()`. Then I compared it to the working playlist path, where `add_to_playlist()` calls `create_notification()` after a user adds someone else's song.
 - The root cause: `rate_song()` created or updated the `Rating` row and committed it, but never created a notification. The shared helper `create_notification()` existed, and `add_to_playlist()` already showed the expected pattern.
 - My fix and side-effect check: I added a `song_rated` notification after the rating commit when the rater is not the song's original sharer. I verified through `POST /songs/<song_id>/rate` and `GET /users/<sharer_id>/notifications`: the rating returned `201`, and the sharer received one `song_rated` notification. I also ran `pytest tests/`, and all 13 tests passed.
+
+git log --oneline screenshot: log_ss.png
