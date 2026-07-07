@@ -85,14 +85,14 @@ This flow shows the app's main organization pattern: route files handle HTTP con
 
 ## Root Cause Analysis Entries
 
-Bug fixes have not started yet. These are the three bugs I plan to fix, with reproduction notes from before changing any code.
+Issue #5 is fixed below. Issues #1 and #4 are still reproduction notes for later fixes.
 
 ### Issue #5: The last song in a playlist never shows up
 
-- How I reproduced it: I ran `pytest tests/` before making fixes. `tests/test_playlists.py::test_playlist_returns_all_songs` created a playlist with 5 songs, but the service returned only 4. `tests/test_playlist_returns_songs_in_order` also showed only `Track 1` through `Track 4`.
-- Route/function involved: `GET /playlists/<playlist_id>/songs` in `routes/playlists.py` calls `playlist_service.get_playlist_songs()`.
-- Wrong behavior observed: The last song in the ordered playlist result is missing.
-- Expected behavior: A playlist with 5 songs should return all 5 songs in order, `Track 1` through `Track 5`.
+- How I reproduced it: Before fixing, I ran `pytest tests/`. `test_playlist_returns_all_songs` expected 5 songs but got 4, and `test_playlist_returns_songs_in_order` only showed `Track 1` through `Track 4`.
+- How I found the root cause: I traced `GET /playlists/<playlist_id>/songs` in `routes/playlists.py` to `playlist_service.get_playlist_songs()`. The SQL query joined `playlist_entries`, filtered by playlist, and ordered by position correctly. The problem was the final return line.
+- The root cause: `get_playlist_songs()` returned `[song.to_dict() for song in songs[:-1]]`. The `[:-1]` slice always drops the final item from the list, so the last playlist song never reaches the route response.
+- My fix and side-effect check: I changed the return line to use `songs` instead of `songs[:-1]`. Then I ran `pytest tests/test_playlists.py`, and all 3 playlist tests passed, including the empty playlist case.
 
 ### Issue #1: My listening streak keeps resetting
 
