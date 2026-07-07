@@ -2,9 +2,9 @@
 
 ## AI Usage
 
-I used AI assistance during Milestone 1 for codebase orientation only. The AI helped inspect the repository structure, summarize the responsibilities of the main Flask, SQLAlchemy, route, service, seed, and test files, and trace how requests move from routes into service functions. I verified the summaries by reading the actual files myself: `README.md`, `app.py`, `models.py`, the route modules, the service modules, the seed script, and the existing tests.
+I used AI assistance to navigate the codebase, trace routes into service functions, compare similar code paths, suggest small targeted fixes, and organize the RCA entries. It helped summarize the roles of `app.py`, `models.py`, `routes/`, `services/`, the seed script, and the existing tests.
 
-No bug fixes were made during this milestone. Any bug investigation and code changes will be done later, one issue at a time, with route-to-service tracing before each fix.
+I still reproduced the issues before fixing them, reviewed the code paths myself, checked the diffs, and ran the tests after each fix. For the notification bug, I also manually verified the route behavior with an in-memory app before and after the change. The AI was most useful for keeping the investigation structured; I verified the final behavior with pytest and manual checks.
 
 ## Codebase Map
 
