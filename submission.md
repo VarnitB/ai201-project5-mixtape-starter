@@ -85,7 +85,7 @@ This flow shows the app's main organization pattern: route files handle HTTP con
 
 ## Root Cause Analysis Entries
 
-Issue #5 is fixed below. Issues #1 and #4 are still reproduction notes for later fixes.
+Issues #5 and #1 are fixed below. Issue #4 is still a reproduction note for a later fix.
 
 ### Issue #5: The last song in a playlist never shows up
 
@@ -96,10 +96,10 @@ Issue #5 is fixed below. Issues #1 and #4 are still reproduction notes for later
 
 ### Issue #1: My listening streak keeps resetting
 
-- How I reproduced it: I ran `pytest tests/` before making fixes. `tests/test_streaks.py::test_streak_increments_on_sunday` listened on Saturday, then Sunday.
-- Route/function involved: `POST /songs/<song_id>/listen` in `routes/songs.py` calls `streak_service.record_listening_event()`, which calls `update_listening_streak()`.
-- Wrong behavior observed: The streak stayed at 1 after the Sunday listen.
-- Expected behavior: Listening on consecutive days, including Saturday to Sunday, should increment the streak from 1 to 2.
+- How I reproduced it: Before fixing, I ran `pytest tests/test_streaks.py`. The Sunday test failed: Saturday 2024-06-15 started the streak at 1, then Sunday 2024-06-16 should have made it 2, but it stayed at 1.
+- How I found the root cause: I traced `POST /songs/<song_id>/listen` in `routes/songs.py` to `record_listening_event()`, then into `update_listening_streak()` in `services/streak_service.py`. The date difference was correct, so the suspicious part was the weekday check.
+- The root cause: The code only incremented on consecutive days when `days_since_last == 1 and today.weekday() != 6`. In Python, `weekday()` returns `6` for Sunday, so the code treated every Sunday listen as not eligible for a consecutive-day increment.
+- My fix and side-effect check: I removed the Sunday exclusion and let any `days_since_last == 1` increment the streak. Then I ran `pytest tests/test_streaks.py`, and all 5 streak tests passed, including same-day listening and skipped-day reset.
 
 ### Issue #4: Rating a song does not create a notification
 
