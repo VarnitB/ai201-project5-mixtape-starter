@@ -85,4 +85,25 @@ This flow shows the app's main organization pattern: route files handle HTTP con
 
 ## Root Cause Analysis Entries
 
-Bug fixes have not started yet. Each future bug fix will be documented here separately after reproducing the bug, tracing from route to service, making a targeted change, and committing that fix on its own.
+Bug fixes have not started yet. These are the three bugs I plan to fix, with reproduction notes from before changing any code.
+
+### Issue #5: The last song in a playlist never shows up
+
+- How I reproduced it: I ran `pytest tests/` before making fixes. `tests/test_playlists.py::test_playlist_returns_all_songs` created a playlist with 5 songs, but the service returned only 4. `tests/test_playlist_returns_songs_in_order` also showed only `Track 1` through `Track 4`.
+- Route/function involved: `GET /playlists/<playlist_id>/songs` in `routes/playlists.py` calls `playlist_service.get_playlist_songs()`.
+- Wrong behavior observed: The last song in the ordered playlist result is missing.
+- Expected behavior: A playlist with 5 songs should return all 5 songs in order, `Track 1` through `Track 5`.
+
+### Issue #1: My listening streak keeps resetting
+
+- How I reproduced it: I ran `pytest tests/` before making fixes. `tests/test_streaks.py::test_streak_increments_on_sunday` listened on Saturday, then Sunday.
+- Route/function involved: `POST /songs/<song_id>/listen` in `routes/songs.py` calls `streak_service.record_listening_event()`, which calls `update_listening_streak()`.
+- Wrong behavior observed: The streak stayed at 1 after the Sunday listen.
+- Expected behavior: Listening on consecutive days, including Saturday to Sunday, should increment the streak from 1 to 2.
+
+### Issue #4: Rating a song does not create a notification
+
+- How I reproduced it: I created an in-memory test app with two users: one sharer and one rater. The sharer created a song, then the rater rated it with `rate_song(rater.id, song.id, 5)`. The rating saved with score `5`, but `get_notifications(sharer.id)` still returned `0` notifications.
+- Route/function involved: `POST /songs/<song_id>/rate` in `routes/songs.py` calls `notification_service.rate_song()`. Notifications are read through `GET /users/<user_id>/notifications`, which calls `notification_service.get_notifications()`.
+- Wrong behavior observed: The rating is saved, but the original sharer does not receive a new `song_rated` notification.
+- Expected behavior: When someone rates another user's shared song, the original sharer should get a notification, similar to how they get notified when their song is added to a playlist.
